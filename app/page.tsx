@@ -7,26 +7,27 @@ import "./globals.css";
 
 export default function Home() {
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [holiday, setHoliday] = useState("");
+  const [holiday, setHoliday] = useState(null);
 
-  // Food & beverage holidays
-  const foodHolidays = {
-    "1-1": "🍾 New Year’s Day – Champagne & Brunch!",
-    "2-9": "🍕 National Pizza Day",
-    "3-25": "🧇 International Waffle Day",
-    "4-7": "🍺 National Beer Day",
-    "5-6": "🍩 National Donut Day",
-    "7-6": "🍫 World Chocolate Day",
-    "8-3": "🍉 Watermelon Day",
-    "9-29": "☕ National Coffee Day",
-    "10-17": "🍝 National Pasta Day",
-    "11-26": "🥧 Thanksgiving Dessert Day",
-    "12-4": "🍪 National Cookie Day",
-  };
+  // Food & beverage holidays (from your JSON)
+  const [foodHolidays, setfoodHolidays] =useState([]);
 
   useEffect(() => {
-    const key = `${selectedDate.getMonth() + 1}-${selectedDate.getDate()}`;
-    setHoliday(foodHolidays[key] || "");
+    fetch("/api/getCalendar").then(
+    resultAPI => resultAPI.json()
+)
+.then(
+  result => setfoodHolidays(result)
+)
+  }, []);
+
+  // Find holiday for the selected date
+  useEffect(() => {
+    const formattedSelected = selectedDate.toISOString().split("T")[0];
+    const found = foodHolidays.find(
+      (h) => h.date.split("T")[0] === formattedSelected
+    );
+    setHoliday(found || null);
   }, [selectedDate]);
 
   const formattedDate = selectedDate.toLocaleDateString(undefined, {
@@ -36,13 +37,15 @@ export default function Home() {
     day: "numeric",
   });
 
-  // Add tooltip and dot under food-holiday tiles
+  // Dots + custom tooltip for holidays
   const tileContent = ({ date }) => {
-    const key = `${date.getMonth() + 1}-${date.getDate()}`;
-    if (foodHolidays[key]) {
+    const formatted = date.toISOString().split("T")[0];
+    const found = foodHolidays.find((h) => h.date.split("T")[0] === formatted);
+
+    if (found) {
       return (
         <div
-          title={foodHolidays[key]} // Tooltip
+          title={`${found.title} — ${found.description}`} // browser tooltip
           style={{
             height: "6px",
             width: "6px",
@@ -58,7 +61,7 @@ export default function Home() {
 
   return (
     <div className="relative min-h-screen bg-amber-50 text-gray-800 flex flex-col font-sans">
-      {/* Top banner */}
+      {/* Banner */}
       <header className="bg-orange-500 text-white py-4 shadow-md flex justify-center items-center">
         <h1 className="text-2xl md:text-3xl font-bold tracking-wide">
           Holiday Calendar App
@@ -67,7 +70,7 @@ export default function Home() {
 
       {/* Main content */}
       <div className="flex-1 flex flex-col items-center justify-center relative">
-        {/* Calendar in top-right corner */}
+        {/* Calendar */}
         <div
           className="absolute top-6 right-6 bg-white/80 backdrop-blur-md rounded-2xl shadow-lg p-3"
           role="region"
@@ -83,7 +86,7 @@ export default function Home() {
           />
         </div>
 
-        {/* Animated content */}
+        {/* Animated Center Content */}
         <motion.main
           key={formattedDate}
           initial={{ opacity: 0, y: 30 }}
@@ -94,8 +97,11 @@ export default function Home() {
           <h2 className="text-5xl font-extrabold text-gray-900 mb-3">
             {formattedDate}
           </h2>
+
           <p className="text-xl text-gray-700 mb-6">
-            {holiday || "Select a date to discover a food or beverage holiday!"}
+            {holiday
+              ? `${holiday.title} — ${holiday.description}`
+              : "Select a date to discover a holiday!"}
           </p>
 
           {holiday && (
@@ -106,7 +112,7 @@ export default function Home() {
               className="inline-block bg-orange-200 text-orange-900 font-semibold px-6 py-3 rounded-full shadow-sm"
               aria-live="polite"
             >
-              {holiday}
+              {holiday.title}
             </motion.div>
           )}
         </motion.main>
