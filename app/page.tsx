@@ -5,12 +5,19 @@ import { motion } from "framer-motion";
 import "react-calendar/dist/Calendar.css";
 import "./globals.css";
 
+export interface IFoodHoliday {
+    date: string;
+    title: string;
+    description: string;
+    picture?: string
+}
+
 export default function Home() {
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [holiday, setHoliday] = useState(null);
+  const [holiday, setHoliday] = useState<IFoodHoliday | null>(null);
 
   // Food & beverage holidays (from your JSON)
-  const [foodHolidays, setfoodHolidays] =useState([]);
+  const [foodHolidays, setfoodHolidays] =useState<IFoodHoliday[]>([]);
 
   useEffect(() => {
     fetch("/api/getCalendar").then(
@@ -38,7 +45,7 @@ export default function Home() {
   });
 
   // Dots + custom tooltip for holidays
-  const tileContent = ({ date }) => {
+  const tileContent = ({ date } : { date : Date }) => {
     const formatted = date.toISOString().split("T")[0];
     const found = foodHolidays.find((h) => h.date.split("T")[0] === formatted);
 
@@ -78,7 +85,7 @@ export default function Home() {
         >
           <Calendar
             value={selectedDate}
-            onChange={setSelectedDate}
+            onChange={(e) => e && e instanceof Date && setSelectedDate(e)}
             next2Label="»"
             prev2Label="«"
             tileContent={tileContent}
